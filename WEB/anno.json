@@ -1,0 +1,78 @@
+[
+  {
+    "video": "LGgaMq1eZGw.52.mp4",
+    "question_id": "LGgaMq1eZGw.52.mp4",
+    "answer": [
+      {
+        "role": "assistant",
+        "content": "A four-legged creature with a tail and wings, and a character with green skin and strange ears.",
+        "related_timespan": [
+          0.0,
+          3.07
+        ],
+        "reply_timespan": [
+          0.0,
+          4.07
+        ]
+      },
+      {
+        "role": "assistant",
+        "content": "A donkey.",
+        "related_timespan": [
+          3.1,
+          5.0
+        ],
+        "reply_timespan": [
+          3.1,
+          6.0
+        ]
+      }
+    ],
+    "conversation": [
+      {
+        "role": "user",
+        "content": "What creatures are shown in the video?",
+        "time": 0
+      }
+    ],
+    "duration": 12.866666666666667
+  },
+  {
+    "video": "gaQwC5QbLeQ.31.mp4",
+    "question_id": "gaQwC5QbLeQ.31.mp4",
+    "answer": [
+      {
+        "role": "assistant",
+        "content": "A book with a flag, a cloud, and a black line appears.",
+        "related_timespan": [
+          0.0,
+          1.73
+        ],
+        "reply_timespan": [
+          0.0,
+          2.73
+        ]
+      },
+      {
+        "role": "assistant",
+        "content": "Two crowns and a Northern Irish flag appear.",
+        "related_timespan": [
+          1.77,
+          10.63
+        ],
+        "reply_timespan": [
+          1.77,
+          10.666666666666666
+        ]
+      }
+    ],
+    "conversation": [
+      {
+        "role": "user",
+        "content": "What appears in the video?",
+        "time": 0
+      }
+    ],
+    "duration": 10.666666666666666
+  }
+]

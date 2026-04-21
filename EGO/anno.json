@@ -1,0 +1,108 @@
+[
+  {
+    "video": "cc575a16-64fd-4cda-9248-5d85f506fdfd-720-1080.mp4",
+    "question_id": "cc575a16-64fd-4cda-9248-5d85f506fdfd-720-1080.mp4",
+    "conversation": [
+      {
+        "role": "user",
+        "time": 0,
+        "content": "What different actions are performed with the coconut mixture during preparation?"
+      }
+    ],
+    "answer": [
+      {
+        "role": "assistant",
+        "content": "Stir the coconut mixture in the pot.",
+        "type": "step",
+        "related_timespan": [
+          20.29,
+          75.69
+        ],
+        "reply_timespan": [
+          20.29,
+          76.69
+        ]
+      },
+      {
+        "role": "assistant",
+        "content": "Add sugar to the grated coconut.",
+        "type": "step",
+        "related_timespan": [
+          75.69,
+          94.41
+        ],
+        "reply_timespan": [
+          75.69,
+          95.41
+        ]
+      },
+      {
+        "role": "assistant",
+        "content": "Stir the mix in the pot.",
+        "type": "substep",
+        "related_timespan": [
+          108.03,
+          158.71
+        ],
+        "reply_timespan": [
+          108.03,
+          159.71
+        ]
+      },
+      {
+        "role": "assistant",
+        "content": "Stir the mix in the pot.",
+        "type": "substep",
+        "related_timespan": [
+          184.88,
+          300.72
+        ],
+        "reply_timespan": [
+          184.88,
+          301.72
+        ]
+      }
+    ],
+    "duration": 360.1666666666667
+  },
+  {
+    "video": "478d7fa4-b174-4266-b0ff-bd180ba0b806-2880-3240.mp4",
+    "question_id": "478d7fa4-b174-4266-b0ff-bd180ba0b806-2880-3240.mp4",
+    "conversation": [
+      {
+        "role": "user",
+        "time": 0,
+        "content": "How is the flat pan prepared before use?"
+      }
+    ],
+    "answer": [
+      {
+        "role": "assistant",
+        "content": "The flat pan is wiped with dung wood.",
+        "type": "substep",
+        "related_timespan": [
+          307.05,
+          342.49
+        ],
+        "reply_timespan": [
+          307.05,
+          343.49
+        ]
+      },
+      {
+        "role": "assistant",
+        "content": "The flat pan is wiped with a cloth.",
+        "type": "substep",
+        "related_timespan": [
+          343.61,
+          359.3
+        ],
+        "reply_timespan": [
+          343.61,
+          360.1666666666667
+        ]
+      }
+    ],
+    "duration": 360.1666666666667
+  }
+]

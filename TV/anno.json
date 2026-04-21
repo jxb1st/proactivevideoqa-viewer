@@ -1,0 +1,93 @@
+[
+  {
+    "frame": "house_frames/house_s05e24_seg02_clip_25",
+    "video": "house_frames=house_s05e24_seg02_clip_25.mp4",
+    "audio": "house/house_audios/house_s05e24_seg02_clip_25.mp3",
+    "question_id": "house_frames=house_s05e24_seg02_clip_25.mp4%Q1",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Where does House imagine Amber is when she tells him he made up a story about himself",
+        "time": 0
+      },
+      {
+        "role": "user",
+        "content": "Subtitle: (Amber:)So, this is the story you made up about who you are. It's a nice one.",
+        "time": 0.352
+      },
+      {
+        "role": "user",
+        "content": "Subtitle: (Kutner:)Too bad it isn't true.",
+        "time": 10.195
+      },
+      {
+        "role": "user",
+        "content": "Subtitle: No.",
+        "time": 22.307
+      },
+      {
+        "role": "user",
+        "content": "Subtitle: (House:)I'm not okay.",
+        "time": 25.143
+      }
+    ],
+    "answer": [
+      {
+        "role": "assistant",
+        "content": "She stands very close to his face",
+        "related_timespan": [
+          0.0,
+          6.49
+        ],
+        "reply_timespan": [
+          0.0,
+          7.49
+        ]
+      }
+    ],
+    "duration": 27.666666666666668
+  },
+  {
+    "frame": "house_frames/house_s02e17_seg02_clip_27",
+    "video": "house_frames=house_s02e17_seg02_clip_27.mp4",
+    "audio": "house/house_audios/house_s02e17_seg02_clip_27.mp3",
+    "question_id": "house_frames=house_s02e17_seg02_clip_27.mp4%Q0",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Where was Chase when he asked House if he was going to call?",
+        "time": 0
+      },
+      {
+        "role": "user",
+        "content": "Subtitle: Are you gonna call?",
+        "time": 0.318
+      },
+      {
+        "role": "user",
+        "content": "Subtitle: (House:)You know, relative to its size,",
+        "time": 3.6550000000000002
+      },
+      {
+        "role": "user",
+        "content": "Subtitle: (House:)the barnacle has the largest penis of any animal.",
+        "time": 6.658
+      }
+    ],
+    "answer": [
+      {
+        "role": "assistant",
+        "content": "Sitting across the table from House.",
+        "related_timespan": [
+          0.12,
+          1.69
+        ],
+        "reply_timespan": [
+          0.12,
+          2.69
+        ]
+      }
+    ],
+    "duration": 8.666666666666666
+  }
+]

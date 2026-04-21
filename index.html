@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ProactiveVideoQA Dataset Viewer</title>
+<style>
+:root {
+  --bg: #0f1419;
+  --panel: #1a2129;
+  --border: #2d3640;
+  --text: #e6e9ed;
+  --muted: #8a949e;
+  --accent: #4dabf7;
+  --good: #51cf66;
+  --bad: #ff6b6b;
+  --highlight: #ffd43b;
+  --assistant: #51cf66;
+  --user: #4dabf7;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+header {
+  padding: 12px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+header h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.control { display: flex; align-items: center; gap: 6px; }
+.control label { color: var(--muted); font-size: 12px; }
+select, input, button {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  border-radius: 4px;
+}
+button { cursor: pointer; }
+button:hover:not(:disabled) { background: var(--border); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+input[type=number] { width: 80px; }
+.banner {
+  background: rgba(77, 171, 247, 0.08);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 20px;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.banner strong { color: var(--text); }
+.banner a { color: var(--accent); text-decoration: none; }
+.banner a:hover { text-decoration: underline; }
+.back-link { font-weight: 500; }
+.video-missing {
+  padding: 40px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 16px;
+  padding: 16px;
+  max-width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  overflow: hidden;
+}
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.field { margin-bottom: 12px; }
+.field-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.field-value { font-size: 14px; word-break: break-word; }
+.field-value.code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  background: var(--bg);
+  padding: 6px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+video {
+  width: 100%;
+  max-height: 540px;
+  background: #000;
+  border-radius: 4px;
+}
+.video-placeholder {
+  width: 100%;
+  min-height: 240px;
+  background: #000;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--bad);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+  gap: 8px;
+}
+.task-content {
+  grid-column: 1 / -1;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+}
+.task-content h2 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.task-content h2:not(:first-of-type) { margin-top: 24px; }
+
+.chat-bubble {
+  padding: 12px 16px;
+  margin: 10px 0;
+  border-radius: 14px;
+  max-width: 85%;
+  font-size: 14px;
+}
+.chat-bubble.user {
+  background: rgba(77, 171, 247, 0.12);
+  border: 1px solid rgba(77, 171, 247, 0.4);
+  margin-left: 0;
+  margin-right: auto;
+}
+.chat-bubble.assistant {
+  background: rgba(81, 207, 102, 0.10);
+  border: 1px solid rgba(81, 207, 102, 0.35);
+  margin-left: auto;
+  margin-right: 0;
+}
+.chat-bubble.subtitle {
+  background: rgba(138, 148, 158, 0.08);
+  border: 1px dashed rgba(138, 148, 158, 0.35);
+  max-width: 85%;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+.chat-meta {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.chat-meta .jump {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+.chat-meta .jump:hover { text-decoration: underline; }
+.chat-meta .tag {
+  background: rgba(255, 212, 59, 0.15);
+  color: var(--highlight);
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+
+.timeline-wrap { margin: 16px 0 8px; }
+.timeline {
+  position: relative;
+  height: 30px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  overflow: hidden;
+}
+.timeline-band {
+  position: absolute;
+  top: 0; bottom: 0;
+}
+.timeline-band.reply {
+  background: linear-gradient(90deg, rgba(81, 207, 102, 0.55), rgba(81, 207, 102, 0.25));
+  border-left: 2px solid var(--good);
+  border-right: 1px solid rgba(81, 207, 102, 0.6);
+}
+.timeline-band.related {
+  background: rgba(255, 212, 59, 0.22);
+  border-left: 1px dashed var(--highlight);
+  border-right: 1px dashed var(--highlight);
+}
+.timeline-cursor {
+  position: absolute;
+  top: -4px; bottom: -4px;
+  width: 2px;
+  background: var(--bad);
+  pointer-events: none;
+}
+.timeline-label {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.timeline-legend {
+  display: flex; gap: 16px; font-size: 11px; color: var(--muted);
+  margin-top: 6px;
+}
+.timeline-legend .swatch {
+  display: inline-block; width: 14px; height: 10px;
+  vertical-align: middle; margin-right: 4px; border-radius: 2px;
+}
+
+.stats-panel {
+  grid-column: 1 / -1;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+}
+.stats-panel h2 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.stats-panel h2:not(:first-of-type) { margin-top: 22px; }
+.stats-summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+.stats-summary b {
+  color: var(--text);
+  font-weight: 600;
+  margin-left: 3px;
+}
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.overview-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.overview-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.overview-card .name {
+  font-size: 12px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.overview-card .desc { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.overview-card .kv { display: flex; justify-content: space-between; font-size: 12px; margin-top: 3px; font-family: "SFMono-Regular", Consolas, monospace; }
+.overview-card .kv .k { color: var(--muted); }
+.overview-card .kv .v { color: var(--text); font-weight: 600; }
+
+.histogram { display: flex; flex-direction: column; gap: 3px; }
+.hist-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 130px;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+.hist-label { color: var(--muted); text-align: right; }
+.hist-bar-wrap { height: 18px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.hist-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #74c0fc);
+  min-width: 0;
+  transition: width 0.25s ease;
+}
+.hist-count { color: var(--text); }
+.hist-count .hist-pct { color: var(--muted); font-size: 11px; margin-left: 4px; }
+.hist-row.current .hist-label { color: var(--highlight); }
+.hist-row.current .hist-bar { background: linear-gradient(90deg, var(--highlight), #ffe066); }
+
+.task-desc {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+}
+.note { margin: 8px 0; font-size: 12px; color: var(--muted); font-style: italic; }
+.error-msg {
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid var(--bad);
+  color: var(--bad);
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font-family: monospace;
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+}
+.type-chip {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  background: rgba(77, 171, 247, 0.18);
+  color: var(--accent);
+  border-radius: 3px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+.related-span { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="banner" id="banner">
+  <a href="https://jxb1st.github.io/datasets/" class="back-link">&larr; Dataset panel</a>
+  <span>Showing an <strong>8-sample</strong> representative subset (2 per subset × 4 subsets). Full benchmark: 1427 samples — see
+    <a href="https://github.com/yellow-binary-tree/ProactiveVideoQA" target="_blank">ProactiveVideoQA</a>.
+  </span>
+</div>
+<header>
+  <h1>ProactiveVideoQA Viewer</h1>
+  <div class="control">
+    <label>Subset</label>
+    <select id="subset-select"></select>
+  </div>
+  <div class="control">
+    <label>Sample</label>
+    <input type="number" id="sample-input" min="0" value="0">
+    <span id="sample-counter" style="color:var(--muted);font-size:12px;">/ 0</span>
+  </div>
+  <div class="control">
+    <button id="prev-btn">&larr; Prev</button>
+    <button id="next-btn">Next &rarr;</button>
+  </div>
+  <div class="control">
+    <button id="random-btn">Random</button>
+  </div>
+  <div style="margin-left:auto;color:var(--muted);font-size:11px;">
+    <span class="kbd">&larr;</span> <span class="kbd">&rarr;</span> nav &middot;
+    <span class="kbd">R</span> random
+  </div>
+</header>
+
+<main>
+  <section class="stats-panel" id="overview-panel"></section>
+  <aside class="panel" id="metadata-panel">
+    <h2>Sample Metadata</h2>
+    <div id="metadata-fields"></div>
+  </aside>
+  <section class="panel" id="video-panel">
+    <h2>Video</h2>
+    <div id="video-container"></div>
+    <div class="timeline-wrap">
+      <div class="timeline" id="timeline"></div>
+      <div class="timeline-label"><span>0 s</span><span id="timeline-end">-</span></div>
+      <div class="timeline-legend">
+        <span><span class="swatch" style="background:rgba(255,212,59,0.3);border:1px dashed var(--highlight);"></span>related_timespan (evidence)</span>
+        <span><span class="swatch" style="background:rgba(81,207,102,0.5);border-left:2px solid var(--good);"></span>reply_timespan (when model should reply)</span>
+        <span><span class="swatch" style="background:var(--bad);width:3px;"></span>playback cursor</span>
+      </div>
+    </div>
+  </section>
+  <section class="task-content" id="task-content"></section>
+  <section class="stats-panel" id="stats-panel"></section>
+</main>
+
+<script>
+(function() {
+  "use strict";
+
+  const SUBSETS = {
+    WEB: {
+      label: "WEB (web videos)",
+      description: "Open-domain web videos. User asks a single question at time 0; model must emit a time-aligned stream of descriptive responses as the content unfolds. Multiple responses per video are typical.",
+    },
+    EGO: {
+      label: "EGO (first-person)",
+      description: "Ego4D-style first-person cooking/activity videos. The model narrates steps/substeps over time; each ground-truth reply is tagged with a hierarchical type (step/substep, possibly merged).",
+    },
+    TV: {
+      label: "TV (dialogue / social)",
+      description: "Clips from Friends / Big Bang Theory with rich subtitle streams injected into the user-side conversation. A single factual question is asked at t=0 and the answer is given at a specific moment during the clip.",
+    },
+    VAD: {
+      label: "VAD (anomaly detection)",
+      description: "UCF-Crime-style surveillance footage. One fixed question asks about suspicious/harmful activity; the model is expected to stay silent until the anomaly begins, then report what is happening.",
+    },
+  };
+
+  const BUCKETS = [
+    { lo: 0,    hi: 10,       label: "0-10s" },
+    { lo: 10,   hi: 30,       label: "10-30s" },
+    { lo: 30,   hi: 60,       label: "30-60s" },
+    { lo: 60,   hi: 120,      label: "1-2m" },
+    { lo: 120,  hi: 300,      label: "2-5m" },
+    { lo: 300,  hi: 600,      label: "5-10m" },
+    { lo: 600,  hi: 1200,     label: "10-20m" },
+    { lo: 1200, hi: Infinity, label: "20m+" },
+  ];
+
+  const state = {
+    subset: "WEB",
+    sampleIdx: 0,
+    currentTime: 0,
+  };
+  const cache = {};
+
+  const $ = id => document.getElementById(id);
+  function escape(s) {
+    if (s == null) return "";
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+  function fmtDur(s) {
+    if (s == null || !isFinite(s)) return "-";
+    if (s < 60)   return s.toFixed(1) + "s";
+    if (s < 3600) return (s / 60).toFixed(1) + "m";
+    return (s / 3600).toFixed(2) + "h";
+  }
+  function fmtTime(s) {
+    if (s == null || !isFinite(s)) return "-";
+    const mm = Math.floor(s / 60);
+    const ss = (s - mm * 60);
+    return mm + ":" + (ss < 10 ? "0" : "") + ss.toFixed(2);
+  }
+
+  async function loadSubset(key) {
+    if (cache[key]) return cache[key];
+    const res = await fetch(key + "/anno.json");
+    if (!res.ok) throw new Error("Failed to load " + key + "/anno.json (HTTP " + res.status + ")");
+    const data = await res.json();
+    cache[key] = data;
+    return data;
+  }
+
+  function videoPath(subset, video) { return subset + "/videos/" + video; }
+
+  function bucketOf(d) {
+    for (let i = 0; i < BUCKETS.length; i++) {
+      if (d >= BUCKETS[i].lo && d < BUCKETS[i].hi) return i;
+    }
+    return BUCKETS.length - 1;
+  }
+
+  function computeDurStats(durs) {
+    if (!durs || durs.length === 0) return null;
+    const sorted = durs.slice().sort((a, b) => a - b);
+    const n = sorted.length;
+    const pick = q => sorted[Math.min(n - 1, Math.floor(n * q))];
+    const sum = sorted.reduce((a, b) => a + b, 0);
+    const counts = BUCKETS.map(() => 0);
+    sorted.forEach(d => counts[bucketOf(d)]++);
+    return { n, sum, min: sorted[0], p25: pick(0.25), median: pick(0.5), p75: pick(0.75), p90: pick(0.9), max: sorted[n - 1], mean: sum / n, counts };
+  }
+
+  function computeSubsetMeta(data) {
+    const durs = [];
+    const nAns = [];
+    const typeCounts = {};
+    const replySpans = [];
+    const videos = new Set();
+    data.forEach(e => {
+      videos.add(e.video);
+      if (typeof e.duration === "number") durs.push(e.duration);
+      const answers = e.answer || [];
+      nAns.push(answers.length);
+      answers.forEach(a => {
+        if (a.type) typeCounts[a.type] = (typeCounts[a.type] || 0) + 1;
+        const r = a.reply_timespan || a.related_timespan;
+        if (Array.isArray(r) && r.length === 2) replySpans.push(r[1] - r[0]);
+      });
+    });
+    const totalResponses = nAns.reduce((a, b) => a + b, 0);
+    return {
+      nVideos: videos.size,
+      nSamples: data.length,
+      durs, nAns, typeCounts, replySpans, totalResponses,
+      durStats: computeDurStats(durs),
+      replyStats: computeDurStats(replySpans),
+    };
+  }
+
+  function renderHistogram(containerHtml, stats, currentBucket, unitLabel) {
+    if (!stats) return "<p class='note'>No data.</p>";
+    const maxCount = Math.max.apply(null, stats.counts) || 1;
+    let html = '<div class="stats-summary">' +
+      '<span>n<b>' + stats.n + '</b></span>' +
+      '<span>min<b>' + fmtDur(stats.min) + '</b></span>' +
+      '<span>p25<b>' + fmtDur(stats.p25) + '</b></span>' +
+      '<span>median<b>' + fmtDur(stats.median) + '</b></span>' +
+      '<span>mean<b>' + fmtDur(stats.mean) + '</b></span>' +
+      '<span>p75<b>' + fmtDur(stats.p75) + '</b></span>' +
+      '<span>p90<b>' + fmtDur(stats.p90) + '</b></span>' +
+      '<span>max<b>' + fmtDur(stats.max) + '</b></span>' +
+      '<span>total<b>' + fmtDur(stats.sum) + '</b></span>' +
+      '</div>';
+    html += '<div class="histogram">';
+    stats.counts.forEach((c, i) => {
+      const wpct = (c / maxCount * 100).toFixed(2);
+      const spct = (c / stats.n * 100).toFixed(1);
+      const hl = (i === currentBucket) ? " current" : "";
+      html += '<div class="hist-row' + hl + '">' +
+        '<div class="hist-label">' + BUCKETS[i].label + '</div>' +
+        '<div class="hist-bar-wrap"><div class="hist-bar" style="width:' + wpct + '%"></div></div>' +
+        '<div class="hist-count">' + c + '<span class="hist-pct">(' + spct + '%)</span></div>' +
+        '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function renderCountHistogram(counts, label) {
+    // counts: object {key: n}
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (entries.length === 0) return "<p class='note'>No type labels in this subset (all responses share the same category).</p>";
+    const maxV = Math.max.apply(null, entries.map(e => e[1]));
+    const total = entries.reduce((s, e) => s + e[1], 0);
+    let html = '<div class="histogram">';
+    entries.forEach(([k, v]) => {
+      const wpct = (v / maxV * 100).toFixed(2);
+      const spct = (v / total * 100).toFixed(1);
+      html += '<div class="hist-row">' +
+        '<div class="hist-label" style="text-align:left;color:var(--text);">' + escape(k) + '</div>' +
+        '<div class="hist-bar-wrap"><div class="hist-bar" style="width:' + wpct + '%"></div></div>' +
+        '<div class="hist-count">' + v + '<span class="hist-pct">(' + spct + '%)</span></div>' +
+        '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function renderIntHistogram(values) {
+    // values: integer list (e.g. # answers per video); show distribution as counts per int bucket
+    if (!values.length) return "";
+    const max = Math.max.apply(null, values);
+    const buckets = new Array(max + 1).fill(0);
+    values.forEach(v => buckets[v]++);
+    const total = values.length;
+    const maxBucket = Math.max.apply(null, buckets);
+    let html = '<div class="histogram">';
+    buckets.forEach((c, i) => {
+      if (c === 0 && i > 0 && i < buckets.length - 1) return;  // compress trailing zeros a bit
+      const wpct = (c / (maxBucket || 1) * 100).toFixed(2);
+      const spct = (c / total * 100).toFixed(1);
+      html += '<div class="hist-row">' +
+        '<div class="hist-label">' + i + '</div>' +
+        '<div class="hist-bar-wrap"><div class="hist-bar" style="width:' + wpct + '%"></div></div>' +
+        '<div class="hist-count">' + c + '<span class="hist-pct">(' + spct + '%)</span></div>' +
+        '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function field(label, value, isCode) {
+    return '<div class="field"><div class="field-label">' + escape(label) +
+      '</div><div class="field-value' + (isCode ? " code" : "") + '">' + value + "</div></div>";
+  }
+
+  function setVideo(container, src, autoSeek) {
+    container.innerHTML = "";
+    const v = document.createElement("video");
+    v.src = src;
+    v.controls = true;
+    v.preload = "metadata";
+    v.id = "main-video";
+    if (autoSeek != null) {
+      v.addEventListener("loadedmetadata", () => {
+        try { v.currentTime = parseFloat(autoSeek); } catch (e) {}
+      });
+    }
+    v.addEventListener("timeupdate", () => {
+      state.currentTime = v.currentTime;
+      updateTimelineCursor();
+    });
+    v.addEventListener("error", () => {
+      const placeholder = document.createElement("div");
+      placeholder.className = "video-missing";
+      placeholder.innerHTML =
+        '<div><b>Video not included in this subset</b></div>' +
+        '<div style="font-family:monospace;font-size:11px;margin-top:6px;">' + escape(src) + '</div>' +
+        '<div style="font-size:11px;margin-top:6px;max-width:420px;">Only 8 representative samples are hosted here to keep the viewer under the GitHub Pages quota.</div>';
+      v.replaceWith(placeholder);
+    });
+    container.appendChild(v);
+    return v;
+  }
+
+  function seekVideo(t) {
+    const v = document.getElementById("main-video");
+    if (!v) return;
+    try { v.currentTime = parseFloat(t); v.play().catch(()=>{}); } catch (e) {}
+  }
+
+  let currentDuration = null;
+  function updateTimelineCursor() {
+    const t = document.getElementById("timeline-cursor");
+    if (!t || !currentDuration) return;
+    const pct = Math.max(0, Math.min(100, state.currentTime / currentDuration * 100));
+    t.style.left = pct + "%";
+  }
+
+  function renderTimeline(duration, answers) {
+    currentDuration = duration;
+    const tl = $("timeline");
+    tl.innerHTML = "";
+    if (!duration || !isFinite(duration)) {
+      tl.innerHTML = '<div style="padding:8px;color:var(--muted);font-size:11px;">No duration metadata</div>';
+      return;
+    }
+    answers.forEach((a, i) => {
+      const related = a.related_timespan;
+      const reply   = a.reply_timespan || related;
+      if (Array.isArray(related) && related.length === 2) {
+        const el = document.createElement("div");
+        el.className = "timeline-band related";
+        el.style.left  = (related[0] / duration * 100) + "%";
+        el.style.width = ((related[1] - related[0]) / duration * 100) + "%";
+        el.title = "Answer " + (i+1) + " related [" + related[0].toFixed(2) + ", " + related[1].toFixed(2) + "]";
+        tl.appendChild(el);
+      }
+      if (Array.isArray(reply) && reply.length === 2) {
+        const el = document.createElement("div");
+        el.className = "timeline-band reply";
+        el.style.left  = (reply[0] / duration * 100) + "%";
+        el.style.width = Math.max(0.5, (reply[1] - reply[0]) / duration * 100) + "%";
+        el.title = "Answer " + (i+1) + " reply [" + reply[0].toFixed(2) + ", " + reply[1].toFixed(2) + "]";
+        tl.appendChild(el);
+      }
+    });
+    const cur = document.createElement("div");
+    cur.className = "timeline-cursor";
+    cur.id = "timeline-cursor";
+    cur.style.left = "0%";
+    tl.appendChild(cur);
+    $("timeline-end").textContent = fmtTime(duration) + " (" + duration.toFixed(1) + "s)";
+  }
+
+  function renderOverview(activeSubset, data) {
+    const keys = Object.keys(SUBSETS);
+    let html = '<h2>Dataset Overview</h2>';
+    html += '<div class="overview-grid">';
+    keys.forEach(k => {
+      const isActive = k === activeSubset;
+      let body;
+      if (cache[k]) {
+        const m = computeSubsetMeta(cache[k]);
+        body =
+          '<div class="kv"><span class="k">samples</span><span class="v">' + m.nSamples + '</span></div>' +
+          '<div class="kv"><span class="k">unique videos</span><span class="v">' + m.nVideos + '</span></div>' +
+          '<div class="kv"><span class="k">total duration</span><span class="v">' + fmtDur(m.durStats ? m.durStats.sum : 0) + '</span></div>' +
+          '<div class="kv"><span class="k">median length</span><span class="v">' + fmtDur(m.durStats ? m.durStats.median : 0) + '</span></div>' +
+          '<div class="kv"><span class="k">GT responses</span><span class="v">' + m.totalResponses + '</span></div>' +
+          '<div class="kv"><span class="k">resp / video</span><span class="v">' + (m.totalResponses / m.nSamples).toFixed(2) + '</span></div>';
+      } else {
+        body = '<div class="kv"><span class="k">status</span><span class="v">not loaded</span></div>';
+      }
+      html += '<div class="overview-card' + (isActive ? " active" : "") + '" data-k="' + k + '">' +
+        '<div class="name">' + k + '</div>' +
+        '<div class="desc">' + escape(SUBSETS[k].description) + '</div>' +
+        body +
+        '</div>';
+    });
+    html += '</div>';
+    $("overview-panel").innerHTML = html;
+    // click card to switch subset
+    document.querySelectorAll('.overview-card').forEach(c => {
+      c.addEventListener('click', () => {
+        const k = c.getAttribute('data-k');
+        if (k && k !== state.subset) {
+          state.subset = k;
+          state.sampleIdx = 0;
+          $("subset-select").value = k;
+          render();
+        }
+      });
+    });
+  }
+
+  function renderStats(subset, data, currentDur) {
+    const m = computeSubsetMeta(data);
+    const cb = currentDur != null ? bucketOf(currentDur) : -1;
+    let html = '<h2>Video Length Distribution &middot; ' + subset + ' (n=' + m.durStats.n + ')</h2>';
+    html += renderHistogram(null, m.durStats, cb, "videos");
+    html += '<h2>Reply-span Duration Distribution &middot; per-response window</h2>';
+    if (m.replyStats) {
+      html += renderHistogram(null, m.replyStats, -1, "replies");
+    } else {
+      html += '<p class="note">No reply-span data.</p>';
+    }
+    html += '<h2>Responses per Sample</h2>';
+    html += renderIntHistogram(m.nAns);
+    html += '<h2>Response-Type Breakdown';
+    if (Object.keys(m.typeCounts).length === 0) html += ' <span style="font-weight:400;text-transform:none;">(no type labels in this subset)</span>';
+    html += '</h2>';
+    html += renderCountHistogram(m.typeCounts, "type");
+    $("stats-panel").innerHTML = html;
+  }
+
+  function renderSample(subset, sample) {
+    // Metadata panel
+    const meta = [];
+    meta.push(field("Subset", '<span style="color:var(--accent);font-weight:600;">' + subset + '</span>'));
+    meta.push(field("Question ID", escape(sample.question_id), true));
+    meta.push(field("Video", escape(sample.video), true));
+    meta.push(field("Video Path", escape(videoPath(subset, sample.video)), true));
+    if (sample.audio)  meta.push(field("Audio", escape(sample.audio), true));
+    if (sample.frame)  meta.push(field("Frame Dir", escape(sample.frame), true));
+    meta.push(field("Duration", fmtTime(sample.duration) + ' <span class="related-span">(' + (sample.duration || 0).toFixed(2) + 's)</span>'));
+    meta.push(field("# Conversation Turns", String((sample.conversation || []).length)));
+    meta.push(field("# GT Responses", String((sample.answer || []).length)));
+    $("metadata-fields").innerHTML = meta.join("");
+
+    // Video
+    setVideo($("video-container"), videoPath(subset, sample.video));
+    renderTimeline(sample.duration, sample.answer || []);
+
+    // Task body
+    let html = '<p class="task-desc">' + escape(SUBSETS[subset].description) + '</p>';
+
+    // Conversation (user side / prompt)
+    html += '<h2>Prompt &middot; User Conversation (' + (sample.conversation || []).length + ' turns)</h2>';
+    const hasSubtitle = (sample.conversation || []).some(c => /^Subtitle:/i.test(c.content || ""));
+    if (hasSubtitle) html += '<p class="note">Dashed grey bubbles are subtitle events streamed into the context alongside the question.</p>';
+    (sample.conversation || []).forEach((c, i) => {
+      const isSubtitle = /^Subtitle:/i.test(c.content || "");
+      const cls = "chat-bubble " + (isSubtitle ? "subtitle" : "user");
+      const timeStr = (typeof c.time === "number") ? c.time.toFixed(2) + " s" : "—";
+      html += '<div class="' + cls + '">' +
+        '<div class="chat-meta">' +
+        '<span>' + escape((c.role || "user").toUpperCase()) + ' &middot; turn ' + (i+1) + '</span>' +
+        '<span class="jump" data-t="' + (c.time || 0) + '">t=' + timeStr + ' &#x21b7;</span>' +
+        '</div>' +
+        escape(c.content || "") +
+        '</div>';
+    });
+
+    // Ground-truth answers
+    html += '<h2>Ground-Truth Responses (' + (sample.answer || []).length + ')</h2>';
+    html += '<p class="note">Yellow bands on the timeline = <b>related_timespan</b> (evidence). Green bands = <b>reply_timespan</b> (when the model should speak).</p>';
+    (sample.answer || []).forEach((a, i) => {
+      const rel = a.related_timespan;
+      const rep = a.reply_timespan;
+      const typeTag = a.type ? '<span class="type-chip">' + escape(a.type) + '</span>' : '';
+      html += '<div class="chat-bubble assistant">' +
+        '<div class="chat-meta">' +
+        '<span>ASSISTANT &middot; GT #' + (i+1) + typeTag + '</span>' +
+        '<span class="jump" data-t="' + (rep ? rep[0] : (rel ? rel[0] : 0)) + '">jump to t=' + ((rep ? rep[0] : (rel ? rel[0] : 0))).toFixed(2) + 's &#x21b7;</span>' +
+        '</div>' +
+        escape(a.content || "") +
+        '<div class="related-span" style="margin-top:8px;">' +
+        (rel ? 'related=[' + rel[0].toFixed(2) + ', ' + rel[1].toFixed(2) + '] (' + (rel[1]-rel[0]).toFixed(2) + 's)' : '') +
+        (rep ? ' &nbsp;&middot;&nbsp; reply=[' + rep[0].toFixed(2) + ', ' + rep[1].toFixed(2) + '] (' + (rep[1]-rep[0]).toFixed(2) + 's)' : '') +
+        (a.num_captions != null ? ' &middot; num_captions=' + a.num_captions : '') +
+        '</div>' +
+        '</div>';
+    });
+
+    // Raw JSON (collapsed via <details>)
+    html += '<h2>Raw JSON</h2>';
+    html += '<details><summary style="cursor:pointer;color:var(--accent);font-size:12px;">Show raw anno.json entry</summary>' +
+      '<pre style="background:#0a0d11;border:1px solid var(--border);border-radius:4px;padding:12px;overflow:auto;font-size:11px;max-height:460px;">' +
+      escape(JSON.stringify(sample, null, 2)) + '</pre></details>';
+
+    $("task-content").innerHTML = html;
+
+    // Wire time-jump links
+    document.querySelectorAll('.jump').forEach(el => {
+      el.addEventListener('click', () => {
+        const t = parseFloat(el.getAttribute('data-t')) || 0;
+        seekVideo(t);
+      });
+    });
+  }
+
+  async function render() {
+    let data;
+    try { data = await loadSubset(state.subset); }
+    catch (err) {
+      $("metadata-fields").innerHTML =
+        '<div class="error-msg"><b>Failed to load subset:</b><br>' + escape(err.message) + '</div>';
+      $("video-container").innerHTML = "";
+      $("task-content").innerHTML = "";
+      $("stats-panel").innerHTML = "";
+      $("overview-panel").innerHTML = "";
+      return;
+    }
+    if (state.sampleIdx < 0) state.sampleIdx = 0;
+    if (state.sampleIdx >= data.length) state.sampleIdx = data.length - 1;
+
+    $("sample-input").max = data.length - 1;
+    $("sample-input").value = state.sampleIdx;
+    $("sample-counter").textContent = "/ " + (data.length - 1);
+    $("prev-btn").disabled = state.sampleIdx === 0;
+    $("next-btn").disabled = state.sampleIdx === data.length - 1;
+
+    const sample = data[state.sampleIdx];
+    renderOverview(state.subset, data);
+    renderSample(state.subset, sample);
+    renderStats(state.subset, data, sample.duration);
+  }
+
+  async function prefetchAll() {
+    // Load remaining subsets in background so the overview cards fill in
+    const keys = Object.keys(SUBSETS);
+    for (const k of keys) {
+      if (!cache[k]) {
+        try { await loadSubset(k); } catch (e) { console.warn("prefetch", k, e); }
+      }
+    }
+    renderOverview(state.subset, cache[state.subset]);
+  }
+
+  async function init() {
+    const sel = $("subset-select");
+    Object.keys(SUBSETS).forEach(k => {
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = SUBSETS[k].label;
+      sel.appendChild(opt);
+    });
+    sel.value = state.subset;
+
+    sel.addEventListener("change", () => {
+      state.subset = sel.value;
+      state.sampleIdx = 0;
+      render();
+    });
+    $("sample-input").addEventListener("change", () => {
+      state.sampleIdx = parseInt($("sample-input").value, 10) || 0;
+      render();
+    });
+    $("prev-btn").addEventListener("click", () => {
+      if (state.sampleIdx > 0) { state.sampleIdx--; render(); }
+    });
+    $("next-btn").addEventListener("click", () => {
+      state.sampleIdx++;
+      render();
+    });
+    $("random-btn").addEventListener("click", () => {
+      const data = cache[state.subset];
+      if (!data) return;
+      state.sampleIdx = Math.floor(Math.random() * data.length);
+      render();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "ArrowLeft") { $("prev-btn").click(); }
+      else if (e.key === "ArrowRight") { $("next-btn").click(); }
+      else if (e.key === "r" || e.key === "R") { $("random-btn").click(); }
+    });
+    await render();
+    prefetchAll();  // non-blocking
+  }
+  init();
+})();
+</script>
+</body>
+</html>
