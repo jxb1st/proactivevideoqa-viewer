@@ -723,37 +723,33 @@ video {
 
   function renderOverview(activeSubset, data) {
     const keys = Object.keys(SUBSETS);
-    const useFull = !!(fullStats && fullStats.per_task);
-    let html = '<h2>Dataset Overview ' + (useFull
-      ? '<span style="color:var(--muted);font-weight:400;font-size:12px;">(full dataset)</span>'
-      : '<span style="color:var(--muted);font-weight:400;font-size:12px;">(subset only — full stats unavailable)</span>') + '</h2>';
+    if (!fullStats || !fullStats.per_task) {
+      $("overview-panel").innerHTML =
+        '<h2>Dataset Overview</h2>' +
+        '<p class="note">full_dataset_stats.json failed to load' +
+        (fullStatsError ? ' (' + escape(fullStatsError) + ')' : '') +
+        '. Hard-refresh (Ctrl/Cmd+Shift+R) to retry.</p>';
+      return;
+    }
+    let html = '<h2>Dataset Overview <span style="color:var(--muted);font-weight:400;font-size:12px;">(full benchmark, not subset)</span></h2>';
     html += '<div class="overview-grid">';
     keys.forEach(k => {
       const isActive = k === activeSubset;
       let body;
-      const fullTask = useFull ? fullStats.per_task[k] : null;
+      const fullTask = fullStats.per_task[k];
       if (fullTask && fullTask.stats) {
         const st = fullTask.stats;
-        const subsetMeta = cache[k] ? computeSubsetMeta(cache[k]) : null;
-        const viewerSamples = subsetMeta ? subsetMeta.nSamples : 0;
         body =
-          '<div class="kv"><span class="k">samples (full)</span><span class="v">' + fullTask.n_samples + '</span></div>' +
-          '<div class="kv"><span class="k">samples in viewer</span><span class="v">' + viewerSamples + '</span></div>' +
+          '<div class="kv"><span class="k">samples</span><span class="v">' + fullTask.n_samples + '</span></div>' +
+          '<div class="kv"><span class="k">unique videos</span><span class="v">' + (fullTask.n_unique_videos || 0) + '</span></div>' +
           '<div class="kv"><span class="k">total duration</span><span class="v">' + fmtDur(st.sum) + '</span></div>' +
           '<div class="kv"><span class="k">median length</span><span class="v">' + fmtDur(st.median) + '</span></div>' +
           '<div class="kv"><span class="k">mean length</span><span class="v">' + fmtDur(st.mean) + '</span></div>' +
-          '<div class="kv"><span class="k">range</span><span class="v">' + fmtDur(st.min) + '&ndash;' + fmtDur(st.max) + '</span></div>';
-      } else if (cache[k]) {
-        const m = computeSubsetMeta(cache[k]);
-        body =
-          '<div class="kv"><span class="k">samples (subset)</span><span class="v">' + m.nSamples + '</span></div>' +
-          '<div class="kv"><span class="k">unique videos</span><span class="v">' + m.nVideos + '</span></div>' +
-          '<div class="kv"><span class="k">total duration</span><span class="v">' + fmtDur(m.durStats ? m.durStats.sum : 0) + '</span></div>' +
-          '<div class="kv"><span class="k">median length</span><span class="v">' + fmtDur(m.durStats ? m.durStats.median : 0) + '</span></div>' +
-          '<div class="kv"><span class="k">GT responses</span><span class="v">' + m.totalResponses + '</span></div>' +
-          '<div class="kv"><span class="k">resp / video</span><span class="v">' + (m.totalResponses / m.nSamples).toFixed(2) + '</span></div>';
+          '<div class="kv"><span class="k">range</span><span class="v">' + fmtDur(st.min) + '&ndash;' + fmtDur(st.max) + '</span></div>' +
+          '<div class="kv"><span class="k">GT responses</span><span class="v">' + (fullTask.total_responses || 0) + '</span></div>' +
+          '<div class="kv"><span class="k">resp / video</span><span class="v">' + (fullTask.total_responses ? (fullTask.total_responses / fullTask.n_samples).toFixed(2) : '-') + '</span></div>';
       } else {
-        body = '<div class="kv"><span class="k">status</span><span class="v">not loaded</span></div>';
+        body = '<div class="kv"><span class="k">status</span><span class="v">no full-dataset stats</span></div>';
       }
       html += '<div class="overview-card' + (isActive ? " active" : "") + '" data-k="' + k + '">' +
         '<div class="name">' + k + '</div>' +
@@ -778,32 +774,62 @@ video {
   }
 
   function renderStats(subset, data, currentDur) {
-    const m = computeSubsetMeta(data);
+    const panel = $("stats-panel");
+    if (!fullStats || !fullStats.per_task || !fullStats.per_task[subset]) {
+      panel.innerHTML =
+        '<h2>Dataset Statistics &middot; ' + subset + '</h2>' +
+        '<p class="note">full_dataset_stats.json failed to load' +
+        (fullStatsError ? ' (' + escape(fullStatsError) + ')' : '') +
+        '. Hard-refresh (Ctrl/Cmd+Shift+R) to retry.</p>';
+      return;
+    }
+    const ft = fullStats.per_task[subset];
     const cb = currentDur != null ? bucketOf(currentDur) : -1;
 
-    // Prefer full-dataset duration stats when available.
-    let durStats = m.durStats;
-    let durSourceLabel = '<span style="color:var(--muted);font-weight:400;font-size:12px;">(subset only, n=' + (m.durStats ? m.durStats.n : 0) + ')</span>';
-    if (fullStats && fullStats.per_task && fullStats.per_task[subset] && fullStats.per_task[subset].stats) {
-      durStats = fullStats.per_task[subset].stats;
-      durSourceLabel = '<span style="color:var(--muted);font-weight:400;font-size:12px;">(full dataset, n=' + durStats.n + ')</span>';
+    let html = '<h2>Video Length Distribution &middot; ' + subset +
+      ' <span style="color:var(--muted);font-weight:400;font-size:12px;">(full dataset, n=' + (ft.stats ? ft.stats.n : 0) + ')</span></h2>';
+    html += renderHistogram(null, ft.stats, cb, "videos");
+
+    html += '<h2>Reply-span Duration Distribution &middot; per-response window ' +
+      '<span style="color:var(--muted);font-weight:400;font-size:12px;">(full dataset)</span></h2>';
+    if (ft.reply_span_stats) {
+      html += renderHistogram(null, ft.reply_span_stats, -1, "replies");
+    } else {
+      html += '<p class="note">No reply-span data in the full dataset.</p>';
     }
 
-    let html = '<h2>Video Length Distribution &middot; ' + subset + ' ' + durSourceLabel + '</h2>';
-    html += renderHistogram(null, durStats, cb, "videos");
-    html += '<h2>Reply-span Duration Distribution &middot; per-response window <span style="color:var(--muted);font-weight:400;font-size:12px;">(subset only)</span></h2>';
-    if (m.replyStats) {
-      html += renderHistogram(null, m.replyStats, -1, "replies");
-    } else {
-      html += '<p class="note">No reply-span data.</p>';
+    html += '<h2>Responses per Sample ' +
+      '<span style="color:var(--muted);font-weight:400;font-size:12px;">(full dataset, total=' + (ft.total_responses || 0) + ')</span></h2>';
+    html += renderBucketedHist(ft.resp_labels || [], ft.resp_counts || []);
+
+    html += '<h2>Response-Type Breakdown ' +
+      '<span style="color:var(--muted);font-weight:400;font-size:12px;">(full dataset)</span>';
+    if (!ft.type_counts || Object.keys(ft.type_counts).length === 0) {
+      html += ' <span style="font-weight:400;text-transform:none;">(no type labels in this subset)</span>';
     }
-    html += '<h2>Responses per Sample <span style="color:var(--muted);font-weight:400;font-size:12px;">(subset only)</span></h2>';
-    html += renderIntHistogram(m.nAns);
-    html += '<h2>Response-Type Breakdown <span style="color:var(--muted);font-weight:400;font-size:12px;">(subset only)</span>';
-    if (Object.keys(m.typeCounts).length === 0) html += ' <span style="font-weight:400;text-transform:none;">(no type labels in this subset)</span>';
     html += '</h2>';
-    html += renderCountHistogram(m.typeCounts, "type");
-    $("stats-panel").innerHTML = html;
+    html += renderCountHistogram(ft.type_counts || {}, "type");
+
+    panel.innerHTML = html;
+  }
+
+  // Simple labeled-bucket histogram (labels, counts arrays).
+  function renderBucketedHist(labels, counts) {
+    const total = counts.reduce((a, b) => a + b, 0);
+    if (!total) return '<p class="note">No data.</p>';
+    const maxCount = Math.max.apply(null, counts) || 1;
+    let html = '<div class="histogram">';
+    counts.forEach((c, i) => {
+      const wpct = (c / maxCount * 100).toFixed(2);
+      const spct = (c / total * 100).toFixed(1);
+      html += '<div class="hist-row">' +
+        '<div class="hist-label">' + escape(labels[i] || "") + '</div>' +
+        '<div class="hist-bar-wrap"><div class="hist-bar" style="width:' + wpct + '%"></div></div>' +
+        '<div class="hist-count">' + c + '<span class="hist-pct">(' + spct + '%)</span></div>' +
+        '</div>';
+    });
+    html += '</div>';
+    return html;
   }
 
   function renderSample(subset, sample) {
